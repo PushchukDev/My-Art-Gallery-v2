@@ -1,0 +1,88 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Private assets repo layout (must match):
+      #   media/*.mp3  → static/media/
+      #   images/*.webp → src/assets/images/
+      # Secrets required on this repo:
+      #   ASSETS_REPO  = owner/private-repo-name
+      #   ASSETS_TOKEN = fine-grained PAT (Contents: Read on that private repo)
+      - name: Fetch private assets
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.ASSETS_REPO }}
+          token: ${{ secrets.ASSETS_TOKEN }}
+          path: _assets
+
+      - name: Place assets for build
+        run: |
+          set -euo pipefail
+          mkdir -p static/media src/assets/images
+          if [ ! -d _assets/media ] || [ ! -d _assets/images ]; then
+            echo "::error::Private assets repo must contain media/ and images/ folders."
+            ls -la _assets || true
+            exit 1
+          fi
+          cp -R _assets/media/. static/media/
+          cp -R _assets/images/. src/assets/images/
+          echo "Media files:"
+          ls -la static/media
+          echo "Image files:"
+          ls -la src/assets/images
+          # Sanity: expect at least one audio + one image
+          audio_count=$(find static/media -type f \( -iname '*.mp3' -o -iname '*.ogg' -o -iname '*.wav' \) | wc -l)
+          image_count=$(find src/assets/images -type f \( -iname '*.webp' -o -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \) | wc -l)
+          if [ "$audio_count" -lt 1 ] || [ "$image_count" -lt 1 ]; then
+            echo "::error::Expected audio in static/media and images in src/assets/images after copy."
+            exit 1
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        env:
+          GITHUB_PAGES: 'true'
+        run: npm run build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

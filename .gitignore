@@ -1,0 +1,59 @@
+# Dependencies & build
+node_modules
+dist
+dist-ssr
+.svelte-kit
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment & secrets — never commit these
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*credentials*
+*serviceAccount*
+*service-account*
+secrets/
+.secrets
+
+# Local / editor
+*.local
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Optional raw art sources (keep optimized WebPs out of this public repo)
+source-images/
+
+# Private gallery assets — fetched in CI from the private assets repo.
+# Keep local copies for `npm run dev`; never commit them.
+static/media/*
+!static/media/.gitkeep
+src/assets/images/*
+!src/assets/images/.gitkeep
+
+# Optional raw art sources (keep optimized WebPs in git)
+source-images/
+
+# OS / misc
+.cache
+.tmp
+temp

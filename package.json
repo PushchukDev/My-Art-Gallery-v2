@@ -1,0 +1,28 @@
+{
+  "name": "latent-gallery",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "optimize:images": "node scripts/optimize-images.mjs",
+    "stamp:images": "node scripts/stamp-image-metadata.mjs"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@tsconfig/svelte": "^5.0.4",
+    "@types/node": "^26.1.1",
+    "sharp": "^0.33.5",
+    "svelte": "^5.19.0",
+    "svelte-check": "^4.1.4",
+    "typescript": "~5.7.2",
+    "vite": "^6.0.7"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true,
+    "sharp@0.33.5": true
+  }
+}

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000" role="img" aria-label="Artwork placeholder">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1816"/>
+      <stop offset="55%" stop-color="#0c0b0a"/>
+      <stop offset="100%" stop-color="#050505"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="1000" fill="url(#g)"/>
+  <rect x="48" y="48" width="704" height="904" fill="none" stroke="#c4a484" stroke-opacity="0.35" stroke-width="2"/>
+  <rect x="72" y="72" width="656" height="856" fill="none" stroke="#f3ebe0" stroke-opacity="0.12" stroke-width="1"/>
+  <text x="400" y="470" text-anchor="middle" fill="#f3ebe0" fill-opacity="0.55" font-family="Georgia, serif" font-size="36">Artwork unavailable</text>
+  <text x="400" y="520" text-anchor="middle" fill="#c4a484" fill-opacity="0.7" font-family="system-ui, sans-serif" font-size="18">Add images for local preview  see README</text>
+</svg>
