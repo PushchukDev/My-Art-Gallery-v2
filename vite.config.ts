@@ -8,7 +8,7 @@ const isGitHubPages = process.env.GITHUB_PAGES === 'true';
 
 export default defineConfig({
   plugins: [svelte()],
-  base: isGitHubPages ? '/My-Art-Gallery/' : '/',
+  base: isGitHubPages ? '/My-Art-Gallery-v2/' : '/',
   publicDir: 'static',
   resolve: {
     alias: {

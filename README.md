@@ -49,13 +49,13 @@ If assets are missing: image placeholders + a notice; sound control disables.
 
 ## GitHub Pages
 
-Live site: **https://PushchukDev.github.io/My-Art-Gallery/**
+Live site: **https://PushchukDev.github.io/My-Art-Gallery-v2/**
 
 1. Push to `main` (workflow: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml))
 2. Repo **Settings → Pages → Source: GitHub Actions**
-3. Site URL: `https://PushchukDev.github.io/My-Art-Gallery/`
+3. Site URL: `https://PushchukDev.github.io/My-Art-Gallery-v2/`
 
-The workflow fetches private assets, builds with `GITHUB_PAGES=true` (`base: /My-Art-Gallery/`), and publishes `dist`.
+The workflow fetches private assets, builds with `GITHUB_PAGES=true` (`base: /My-Art-Gallery-v2/`), and publishes `dist`.
 
 Local Pages-like build (assets already present locally):
 
