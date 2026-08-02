@@ -12,6 +12,8 @@
     faded?: boolean;
     onchange: (preset: ExplorePreset) => void;
     onprocesstoggle: () => void;
+    /** Notify parent when explore/sound tips are visible (hide reset overlap). */
+    ontipchange?: (visible: boolean) => void;
   };
 
   let {
@@ -22,11 +24,19 @@
     faded = false,
     onchange,
     onprocesstoggle,
+    ontipchange,
   }: Props = $props();
 
   let tipVisible = $state(true);
+  let soundTipVisible = $state(false);
 
   const showTip = $derived(tipVisible && !faded);
+  const anyTipVisible = $derived(showTip || soundTipVisible);
+
+  $effect(() => {
+    ontipchange?.(anyTipVisible);
+    return () => ontipchange?.(false);
+  });
 
   function dismissTip() {
     tipVisible = false;
@@ -138,7 +148,13 @@
     </button>
 
     <span class="divider" aria-hidden="true"></span>
-    <SoundToggle embedded forcePaused={forceMute} explorePreset={value} />
+    <SoundToggle
+      embedded
+      forcePaused={forceMute}
+      suppressTip={showTip}
+      explorePreset={value}
+      ontipchange={(visible) => (soundTipVisible = visible)}
+    />
   </div>
 </div>
 
@@ -319,7 +335,8 @@
       right: auto;
       left: 50%;
       top: auto;
-      bottom: calc(100% + 0.75rem);
+      /* Clear the floating reset control above the chrome bar */
+      bottom: calc(100% + 3.4rem);
       transform: translateX(-50%);
       max-width: min(16.5rem, 78vw);
       animation-name: tip-in-up;

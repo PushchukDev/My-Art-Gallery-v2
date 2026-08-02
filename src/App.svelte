@@ -23,6 +23,7 @@
   let preset = $state<ExplorePreset>('tunnel');
   let processOpen = $state(false);
   let hideChrome = $state(false);
+  let tipOpen = $state(false);
   let modeApi = $state<ModeApi | null>(null);
 
   /** Reduced motion → Drift (no Z tunnel / 3D film). Gallery stays available. */
@@ -133,7 +134,7 @@
     {/key}
   {/if}
 
-  <ResetButton faded={hideChrome} onclick={resetActiveMode} />
+  <ResetButton faded={hideChrome || tipOpen} onclick={resetActiveMode} />
 
   <PresetPicker
     value={activePreset}
@@ -143,6 +144,7 @@
     faded={hideChrome}
     onchange={setPreset}
     onprocesstoggle={toggleProcess}
+    ontipchange={(visible) => (tipOpen = visible)}
   />
 {/if}
 

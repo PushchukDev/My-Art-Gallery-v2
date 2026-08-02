@@ -119,6 +119,8 @@
 
   .frame__content {
     width: min(100%, 92rem);
+    max-width: 100%;
+    min-width: 0;
     height: 100%;
     padding: var(--gutter);
     display: flex;
@@ -133,6 +135,8 @@
   }
 
   .title-block {
+    max-width: min(100%, 92vw);
+    min-width: 0;
     text-align: center;
     animation: rise-in 1.1s var(--ease-out-expo) both;
   }
@@ -140,10 +144,12 @@
   .brand {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: clamp(3.5rem, calc(var(--index) * 7.2), 8.5rem);
+    font-size: clamp(2.4rem, calc(var(--index) * 5.4), 8.5rem);
     letter-spacing: -0.04em;
     line-height: 0.95;
     color: var(--brand);
+    max-width: min(18ch, 92vw);
+    margin-inline: auto;
   }
 
   .tagline {

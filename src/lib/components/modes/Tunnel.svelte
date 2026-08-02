@@ -78,6 +78,11 @@
     let currentSnap = 0;
     /** Ignore scroll-end corrections while a programmatic snap is in flight / settling. */
     let suppressSnapUntil = 0;
+    /** Finger is down — never snap-correct during an active touch. */
+    let touchActive = false;
+    /** True after touch until momentum settles (avoids fighting inertial scroll). */
+    let touchGesture = false;
+    const supportsScrollEnd = 'onscrollend' in window;
 
     const maxScroll = () =>
       Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
@@ -91,6 +96,22 @@
     const clearScrollEnd = () => {
       window.clearTimeout(scrollEndTimer);
       scrollEndTimer = 0;
+    };
+
+    const settleToNearest = () => {
+      if (locked || touchActive || performance.now() < suppressSnapUntil) return;
+      const nearest = nearestSnapIndex(document.documentElement.scrollTop);
+      currentSnap = nearest;
+      const target = snapScrolls[nearest]!;
+      if (Math.abs(document.documentElement.scrollTop - target) > 2) {
+        animateTo(target);
+      }
+      touchGesture = false;
+    };
+
+    const scheduleSettle = (delayMs: number) => {
+      clearScrollEnd();
+      scrollEndTimer = window.setTimeout(settleToNearest, delayMs);
     };
 
     const animateTo = (target: number) => {
@@ -138,6 +159,11 @@
     };
 
     const onWheel = (event: WheelEvent) => {
+      // Touch/trackpad gestures that synthesize wheel still scroll natively when
+      // we don't preventDefault — only hijack real discrete wheel / ctrl-free
+      // desktop scrolling. Touch paths use native scroll + settle.
+      if (touchGesture || touchActive) return;
+
       event.preventDefault();
       if (locked || performance.now() < wheelLock) return;
 
@@ -165,28 +191,53 @@
       goToSnap(currentSnap + dir);
     };
 
+    const onTouchStart = () => {
+      touchActive = true;
+      touchGesture = true;
+      clearScrollEnd();
+    };
+
+    const onTouchEnd = () => {
+      touchActive = false;
+      // Wait for inertial scroll to finish before snapping.
+      if (supportsScrollEnd) {
+        // scrollend will settle; keep a long fallback if scrollend never fires.
+        scheduleSettle(600);
+      } else {
+        scheduleSettle(280);
+      }
+    };
+
     const onScroll = () => {
       syncScrollState();
-      if (locked || performance.now() < suppressSnapUntil) {
+      if (locked || touchActive || performance.now() < suppressSnapUntil) {
         clearScrollEnd();
         return;
       }
 
+      // During/after touch, prefer scrollend (or a long idle) so we don't yank
+      // against momentum. Desktop wheel path uses goToSnap and rarely lands here.
+      if (touchGesture) {
+        if (!supportsScrollEnd) scheduleSettle(280);
+        return;
+      }
+
+      scheduleSettle(120);
+    };
+
+    const onScrollEnd = () => {
+      if (!touchGesture && !touchActive) return;
       clearScrollEnd();
-      scrollEndTimer = window.setTimeout(() => {
-        if (locked || performance.now() < suppressSnapUntil) return;
-        const nearest = nearestSnapIndex(document.documentElement.scrollTop);
-        currentSnap = nearest;
-        const target = snapScrolls[nearest]!;
-        if (Math.abs(document.documentElement.scrollTop - target) > 2) {
-          animateTo(target);
-        }
-      }, 120);
+      settleToNearest();
     };
 
     window.addEventListener('wheel', onWheel, { passive: false });
     window.addEventListener('keydown', onKeydown);
     window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scrollend', onScrollEnd, { passive: true });
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    window.addEventListener('touchcancel', onTouchEnd, { passive: true });
 
     currentSnap = 0;
     window.scrollTo(0, snapScrolls[0] ?? 0);
@@ -205,6 +256,10 @@
       window.removeEventListener('wheel', onWheel);
       window.removeEventListener('keydown', onKeydown);
       window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scrollend', onScrollEnd);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('touchcancel', onTouchEnd);
     };
   });
 </script>

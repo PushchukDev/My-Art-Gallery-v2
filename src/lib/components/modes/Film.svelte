@@ -24,11 +24,14 @@
   let introValue = true;
   let wheelLocked = false;
   let dragAccumX = 0;
+  let dragAccumY = 0;
 
   let snapTimer = 0;
   let raf = 0;
   let dragLastX = 0;
+  let dragLastY = 0;
   let wheelLockTimer = 0;
+  let cueLabel = $state('Scroll');
 
   const creditIndex = pieces.length;
   const maxIndex = creditIndex;
@@ -217,7 +220,9 @@
       if (event.button !== 0) return;
       dragging = true;
       dragAccumX = 0;
+      dragAccumY = 0;
       dragLastX = event.clientX;
+      dragLastY = event.clientY;
       window.clearTimeout(snapTimer);
       cancelAnimationFrame(raf);
       (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
@@ -226,20 +231,27 @@
     const onPointerMove = (event: PointerEvent) => {
       if (!dragging) return;
       const dx = event.clientX - dragLastX;
+      const dy = event.clientY - dragLastY;
       dragLastX = event.clientX;
+      dragLastY = event.clientY;
       dragAccumX += dx;
+      dragAccumY += dy;
     };
 
     const onPointerUp = () => {
       if (!dragging) return;
       dragging = false;
-      const threshold = 56;
-      if (Math.abs(dragAccumX) >= threshold) {
-        stepBy(dragAccumX < 0 ? 1 : -1);
+      const threshold = 48;
+      const useY = Math.abs(dragAccumY) > Math.abs(dragAccumX);
+      const delta = useY ? dragAccumY : dragAccumX;
+      // Horizontal: swipe left → next. Vertical: swipe up → next (scroll metaphor).
+      if (Math.abs(delta) >= threshold) {
+        stepBy(delta < 0 ? 1 : -1);
       } else {
         scheduleSnap();
       }
       dragAccumX = 0;
+      dragAccumY = 0;
     };
 
     const onResize = () => measure();
@@ -265,6 +277,11 @@
       if (cleaned) return;
       measure();
       publishProgress();
+      const touchPrimary =
+        navigator.maxTouchPoints > 0 ||
+        window.matchMedia('(pointer: coarse)').matches ||
+        window.matchMedia('(hover: none)').matches;
+      cueLabel = touchPrimary ? 'Swipe' : 'Scroll';
       stage = stageEl;
       window.addEventListener('wheel', onWheel, { passive: false });
       window.addEventListener('keydown', onKeydown);
@@ -323,7 +340,7 @@
           <span class="tagline-sub">{brand.subline}</span>
           <span class="tagline-ps">{brand.ps}</span>
         </p>
-        <ScrollCue label="Scroll" />
+        <ScrollCue label={cueLabel} />
       </div>
     {/if}
   </div>

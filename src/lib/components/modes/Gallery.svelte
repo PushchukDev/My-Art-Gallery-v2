@@ -11,15 +11,46 @@
   let { onzoomchange }: Props = $props();
 
   let activeId = $state<string | null>(null);
+  let lockedScrollY = 0;
 
   const activePiece = $derived(
     activeId ? (pieces.find((piece) => piece.id === activeId) ?? null) : null,
   );
 
+  function lockPageScroll() {
+    lockedScrollY = window.scrollY || document.documentElement.scrollTop;
+    const body = document.body;
+    body.style.position = 'fixed';
+    body.style.top = `-${lockedScrollY}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
+    body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+  }
+
+  function unlockPageScroll() {
+    const body = document.body;
+    body.style.position = '';
+    body.style.top = '';
+    body.style.left = '';
+    body.style.right = '';
+    body.style.width = '';
+    body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+    window.scrollTo(0, lockedScrollY);
+  }
+
   $effect(() => {
     const open = activeId != null;
     onzoomchange?.(open);
     return () => onzoomchange?.(false);
+  });
+
+  $effect(() => {
+    if (activeId == null) return;
+    lockPageScroll();
+    return () => unlockPageScroll();
   });
 
   function closeZoom() {
@@ -28,8 +59,13 @@
 
   /** Close zoom and ease back to the gallery hero. */
   export function resetToStart() {
+    // Read before closeZoom — body is position:fixed while zoomed, so scrollY is 0.
+    const start =
+      activeId != null
+        ? lockedScrollY
+        : window.scrollY || document.documentElement.scrollTop;
     closeZoom();
-    const start = window.scrollY || document.documentElement.scrollTop;
+
     if (start < 2) {
       window.scrollTo(0, 0);
       return;
@@ -47,8 +83,11 @@
       else window.scrollTo(0, 0);
     };
 
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(frame);
+    // Wait a frame so zoom unlock restores the locked scroll position first.
+    requestAnimationFrame(() => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(frame);
+    });
   }
 
   function onCellClick(id: string) {
@@ -194,6 +233,8 @@
     padding: clamp(1rem, 3vw, 2rem);
     pointer-events: auto;
     cursor: zoom-out;
+    overscroll-behavior: none;
+    touch-action: none;
     animation: zoom-in 0.28s var(--ease-out-expo) both;
   }
 

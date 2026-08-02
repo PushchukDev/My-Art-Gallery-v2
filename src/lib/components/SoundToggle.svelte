@@ -13,11 +13,21 @@
     embedded?: boolean;
     /** Pause ambient while another scene (e.g. process video) owns audio. */
     forcePaused?: boolean;
+    /** Hide tip while another chrome tip (e.g. explore presets) is visible. */
+    suppressTip?: boolean;
     /** Re-show the tip when the explore preset changes. */
     explorePreset?: ExplorePreset | null;
+    /** Notify parent when the sound tip is shown/hidden (for chrome layout). */
+    ontipchange?: (visible: boolean) => void;
   };
 
-  let { embedded = false, forcePaused = false, explorePreset = null }: Props = $props();
+  let {
+    embedded = false,
+    forcePaused = false,
+    suppressTip = false,
+    explorePreset = null,
+    ontipchange,
+  }: Props = $props();
 
   let audio = $state<HTMLAudioElement | null>(null);
   let playing = $state(false);
@@ -32,7 +42,12 @@
   let audioAvailable = $state(true);
 
   const audioSrc = `${import.meta.env.BASE_URL}media/push_art_gallery_2.mp3`;
-  const showTip = $derived(tipVisible && !forcePaused && audioAvailable);
+  const showTip = $derived(tipVisible && !forcePaused && !suppressTip && audioAvailable);
+
+  $effect(() => {
+    ontipchange?.(showTip);
+    return () => ontipchange?.(false);
+  });
 
   function dismissTip() {
     tipVisible = false;
@@ -372,6 +387,14 @@
     }
     50% {
       box-shadow: 0 0 0 6px color-mix(in srgb, var(--warm-edge) 18%, transparent);
+    }
+  }
+
+  @media (max-width: 720px) {
+    .sound-wrap.embedded .tip {
+      /* Sit above the reset control that floats over the chrome */
+      bottom: calc(100% + 3.4rem);
+      max-width: min(14rem, 70vw);
     }
   }
 
