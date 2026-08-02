@@ -150,10 +150,8 @@
   .item {
     display: flex;
     will-change: transform, opacity, filter;
-    transition:
-      transform var(--transition),
-      opacity 0.75s ease,
-      filter 0.75s ease;
+    /* No CSS transition — scroll updates these every frame; a 0.75s lerp
+       makes opacity/motion feel sluggish and lag behind the finger. */
   }
 
   .item.left {
@@ -209,7 +207,6 @@
 
   @media (prefers-reduced-motion: reduce) {
     .item {
-      transition: none;
       filter: none !important;
       transform: none !important;
       opacity: 1 !important;

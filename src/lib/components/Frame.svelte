@@ -82,10 +82,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Do NOT transition transform — Tunnel drives translateZ every animation
-       frame. A 0.75s CSS lerp fights that and makes the previous piece
-       explode toward the camera after each step. */
-    transition: opacity 0.2s linear;
+    /* No transitions — Tunnel sets transform/opacity every animation frame. */
+    transition: none;
     will-change: transform, opacity;
     transform-style: preserve-3d;
   }
@@ -153,7 +151,7 @@
     width: fit-content;
     max-width: min(42vw, calc(var(--index) * var(--side-small)));
     flex: 0 1 auto;
-    transition: filter 0.75s var(--ease-out-expo);
+    transition: none;
     will-change: filter;
   }
 

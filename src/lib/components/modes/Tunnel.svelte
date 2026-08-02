@@ -33,22 +33,29 @@
   // Spacer height must be lastSnap + viewport so maxScroll can actually reach credits.
   const lastSnap = snapScrolls.at(-1) ?? 0;
 
+  /** Soft ceiling — past this, CSS perspective scales the piece into a "pop". */
+  const Z_NEAR_CAP = 28;
+
   function zAt(index: number, top: number): number {
     return index * Z_SPACING + Z_SPACING + (top + near / 5) * 5;
   }
 
+  /** Z used for translateZ — never let a frame cross into the near-field blow-up. */
+  function visualZ(z: number): number {
+    return Math.min(z, Z_NEAR_CAP);
+  }
+
   function opacityAt(z: number): number {
-    // Kill frames once they pass the lens — past this they scale insanely large.
-    if (z >= near / 2.4) return 0;
+    if (z >= Z_NEAR_CAP) return 0;
     if (z <= -near * 2.6) return 0;
 
     if (z < -near * 1.2) {
       return Math.max(0, 1 - (-z - near * 1.2) / (near * 1.4));
     }
 
-    // Start fading as soon as a piece crosses the focus plane toward the camera.
-    if (z > 8) {
-      return Math.max(0, 1 - (z - 8) / (near / 2.4 - 8));
+    // Title focuses at z≈0 — only fade once a frame has passed the lens.
+    if (z > 6) {
+      return Math.max(0, 1 - (z - 6) / (Z_NEAR_CAP - 6));
     }
 
     return 1;
@@ -300,7 +307,7 @@
       {@const blur = frame.type === 'image' ? blurAt(z) : 0}
       <Frame
         {frame}
-        {z}
+        z={visualZ(z)}
         {opacity}
         {blur}
         reducedMotion={false}
