@@ -1,6 +1,6 @@
 # My Art Gallery
 
-**My Art Gallery** — a client-only scroll exhibition of original drawings, built with **Svelte 5**, **TypeScript**, and **Vite**. No backend, no API keys.
+**My Art Gallery** — a client-only scroll exhibition of some of my artworks, built with **Svelte 5**, **TypeScript**, and **Vite**.
 
 Explore the art through **Tunnel**, **Drift**, **Film**, and **Gallery** presets. Ambient audio and a music-reactive backdrop are optional. Choice of explore mode is saved in `localStorage`.
 
@@ -36,15 +36,6 @@ Images and audio are **not** committed here. They live in a private assets repo 
 | `src/assets/images/*.webp` | `images/` |
 | `static/media/*.mp3` | `media/` |
 
-**Actions secrets** (Settings → Secrets → Actions):
-
-| Secret | Value |
-|--------|--------|
-| `ASSETS_REPO` | `owner/private-assets-repo` |
-| `ASSETS_TOKEN` | Fine-grained PAT with Contents: Read on that repo |
-
-For local preview, copy those folders from the private repo into this project (gitignored), then `npm run dev`.
-
 If assets are missing: image placeholders + a notice; sound control disables.
 
 ## GitHub Pages
@@ -53,7 +44,7 @@ Live site: **https://PushchukDev.github.io/My-Art-Gallery-v2/**
 
 1. Push to `main` (workflow: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml))
 2. Repo **Settings → Pages → Source: GitHub Actions**
-3. Site URL: `https://PushchukDev.github.io/My-Art-Gallery-v2/`
+3. Site URL: `https://<user>.github.io/<repo-name>/`
 
 The workflow fetches private assets, builds with `GITHUB_PAGES=true` (`base: /My-Art-Gallery-v2/`), and publishes `dist`.
 
