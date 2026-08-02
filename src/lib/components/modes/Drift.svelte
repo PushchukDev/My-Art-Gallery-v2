@@ -130,11 +130,11 @@
     z-index: 2;
     max-width: 58rem;
     margin: 0 auto;
-    padding: 0 var(--gutter) 7rem;
+    padding: 0 var(--gutter) var(--chrome-clearance);
   }
 
   .hero {
-    min-height: 100vh;
+    min-height: var(--vh-full);
     display: grid;
     place-items: center;
   }
@@ -178,7 +178,7 @@
     width: auto;
     height: auto;
     max-width: 100%;
-    max-height: min(72vh, calc(var(--index) * var(--side-big)));
+    max-height: min(72vh, 72dvh, calc(var(--index) * var(--side-big)));
     border-radius: var(--frame-radius);
     box-shadow:
       0 0 0 1px color-mix(in srgb, var(--parchment) 8%, transparent),
@@ -186,7 +186,7 @@
   }
 
   .media.landscape :global(img) {
-    max-height: min(70vh, calc(var(--index) * 42));
+    max-height: min(70vh, 70dvh, calc(var(--index) * 42));
   }
 
   .credit {

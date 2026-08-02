@@ -105,7 +105,7 @@
     transform: none !important;
     opacity: 1 !important;
     will-change: auto;
-    min-height: min(70vh, 36rem);
+    min-height: min(70vh, 70dvh, 36rem);
   }
 
   .frame_bg {
@@ -215,7 +215,7 @@
     width: auto;
     height: auto;
     max-width: 100%;
-    max-height: min(72vh, calc(var(--index) * var(--side-big)));
+    max-height: min(72vh, 72dvh, calc(var(--index) * var(--side-big)));
     border-radius: var(--frame-radius);
     box-shadow:
       0 0 0 1px color-mix(in srgb, var(--parchment) 8%, transparent),
@@ -224,7 +224,7 @@
   }
 
   .frame-media.landscape :global(img) {
-    max-height: min(70vh, calc(var(--index) * 42));
+    max-height: min(70vh, 70dvh, calc(var(--index) * 42));
   }
 
   .caption {

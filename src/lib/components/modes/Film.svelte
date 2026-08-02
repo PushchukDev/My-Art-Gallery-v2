@@ -4,16 +4,16 @@
   import ScrollCue from '../ScrollCue.svelte';
   import ArtImage from '../ArtImage.svelte';
 
-  /** Neighbors on each side of the focused card. */
-  const REACH = 2;
-  /** Degrees between adjacent cards on the front arc. */
-  const ARC = 56;
   /** Ignore further wheel input briefly after a step (trackpads spam events). */
   const WHEEL_LOCK_MS = 380;
 
   let focus = $state(0);
   let spin = $state(0);
   let radius = $state(420);
+  /** Neighbors on each side of the focused card (1 on narrow phones). */
+  let reach = $state(2);
+  /** Degrees between adjacent cards on the front arc. */
+  let arc = $state(56);
   let dragging = $state(false);
   let showIntro = $state(true);
   let stageEl = $state<HTMLElement | null>(null);
@@ -22,6 +22,8 @@
   let spinValue = 0;
   let focusValue = 0;
   let introValue = true;
+  let arcValue = 56;
+  let reachValue = 2;
   let wheelLocked = false;
   let dragAccumX = 0;
   let dragAccumY = 0;
@@ -51,9 +53,9 @@
   }
 
   function applySpin(next: number) {
-    const max = maxIndex * ARC;
+    const max = maxIndex * arcValue;
     spinValue = Math.max(0, Math.min(max, next));
-    focusValue = clampIndex(Math.round(spinValue / ARC));
+    focusValue = clampIndex(Math.round(spinValue / arcValue));
     spin = spinValue;
     focus = focusValue;
   }
@@ -102,7 +104,7 @@
     const next = clampIndex(index);
     dismissIntro();
     window.clearTimeout(snapTimer);
-    animateTo(next * ARC);
+    animateTo(next * arcValue);
     publishProgress();
   }
 
@@ -113,7 +115,7 @@
   function scheduleSnap() {
     window.clearTimeout(snapTimer);
     snapTimer = window.setTimeout(() => {
-      animateTo(clampIndex(Math.round(spinValue / ARC)) * ARC);
+      animateTo(clampIndex(Math.round(spinValue / arcValue)) * arcValue);
     }, 80);
   }
 
@@ -147,13 +149,31 @@
   function measure() {
     const w = window.innerWidth;
     const h = window.innerHeight;
-    // Wider orbit = more horizontal spread for the same ARC
-    radius = Math.min(Math.max(w * 0.48, h * 0.45, 400), Math.min(w * 0.7, 760));
+    const narrow = w <= 720;
+
+    // Narrow phones: tighter arc + one neighbor so cards aren't clipped hard.
+    const nextArc = narrow ? 40 : 56;
+    const nextReach = narrow ? 1 : 2;
+    if (nextArc !== arcValue || nextReach !== reachValue) {
+      const focused = focusValue;
+      arcValue = nextArc;
+      reachValue = nextReach;
+      arc = nextArc;
+      reach = nextReach;
+      applySpin(focused * arcValue);
+    }
+
+    if (narrow) {
+      radius = Math.min(Math.max(w * 0.4, h * 0.34, 190), Math.min(w * 0.52, 300));
+    } else {
+      // Wider orbit = more horizontal spread for the same ARC
+      radius = Math.min(Math.max(w * 0.48, h * 0.45, 400), Math.min(w * 0.7, 760));
+    }
   }
 
   function visibleIndices(): number[] {
     const out: number[] = [];
-    for (let o = -REACH; o <= REACH; o++) {
+    for (let o = -reach; o <= reach; o++) {
       const i = focus + o;
       if (i >= 0 && i <= maxIndex) out.push(i);
     }
@@ -166,8 +186,8 @@
     filter: string;
     zIndex: number;
   } {
-    const offset = index - spin / ARC;
-    const angle = offset * ARC;
+    const offset = index - spin / arc;
+    const angle = offset * arc;
     const abs = Math.abs(offset);
     const opacity = Math.max(0, 1 - abs * 0.22);
     const brightness = Math.max(0.4, 1.05 - abs * 0.28);
@@ -178,7 +198,7 @@
       transform: `translate(-50%, -50%) rotateY(${angle}deg) translateZ(${radius}px) scale(${scale})`,
       opacity,
       filter: `brightness(${brightness})`,
-      zIndex: Math.round((REACH + 1 - abs) * 10),
+      zIndex: Math.round((reach + 1 - abs) * 10),
     };
   }
 
@@ -361,7 +381,7 @@
     position: relative;
     height: 100%;
     /* Leave optical room above Explore + reset */
-    perspective: min(1600px, 140vh);
+    perspective: min(1600px, 140vh, 140dvh);
     perspective-origin: 50% 44%;
     transform-style: preserve-3d;
     cursor: grab;
@@ -416,7 +436,7 @@
     height: auto;
     /* Fill most of the viewport; reserve chrome + reset (~9–11rem) */
     max-width: min(56vw, 36rem);
-    max-height: min(78vh, calc(100vh - 10.5rem));
+    max-height: min(78vh, 78dvh, calc(var(--vh-full) - 10.5rem - var(--safe-bottom)));
     border-radius: var(--frame-radius);
     box-shadow: 0 28px 90px color-mix(in srgb, black 55%, transparent);
     user-select: none;
@@ -495,25 +515,25 @@
 
   @media (max-width: 720px) {
     .stage {
-      perspective: min(1200px, 130vh);
-      perspective-origin: 50% 42%;
+      perspective: min(1100px, 120vh, 120dvh);
+      perspective-origin: 50% 40%;
     }
 
     .panel {
-      top: 44%;
+      top: 42%;
     }
 
     .panel :global(img),
     .panel-art :global(img) {
-      max-width: min(82vw, 22rem);
-      max-height: min(64vh, calc(100vh - 11.5rem));
+      max-width: min(88vw, 24rem);
+      max-height: min(68vh, 68dvh, calc(var(--vh-full) - 11.5rem - var(--safe-bottom)));
     }
   }
 
   @media (max-height: 640px) {
     .panel :global(img),
     .panel-art :global(img) {
-      max-height: min(70vh, calc(100vh - 9.5rem));
+      max-height: min(70vh, 70dvh, calc(var(--vh-full) - 9.5rem - var(--safe-bottom)));
       max-width: min(48vw, 28rem);
     }
   }

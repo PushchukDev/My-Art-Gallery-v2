@@ -272,8 +272,8 @@
   .sound-wrap:not(.embedded) {
     position: fixed;
     z-index: 40;
-    right: clamp(1rem, 3vw, 1.75rem);
-    bottom: clamp(1rem, 3vw, 1.75rem);
+    right: max(clamp(1rem, 3vw, 1.75rem), var(--safe-right));
+    bottom: max(clamp(1rem, 3vw, 1.75rem), var(--safe-bottom));
   }
 
   .tip {
@@ -329,8 +329,8 @@
   }
 
   .sound {
-    width: 3rem;
-    height: 3rem;
+    width: 2.75rem;
+    height: 2.75rem;
     display: grid;
     place-items: center;
     border-radius: 999px;
@@ -345,8 +345,8 @@
   }
 
   .sound.embedded {
-    width: 2.65rem;
-    height: 2.65rem;
+    width: 2.75rem;
+    height: 2.75rem;
     background: color-mix(in srgb, var(--parchment) 6%, transparent);
   }
 

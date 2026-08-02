@@ -18,6 +18,13 @@
     scrollbar-gutter: stable;
   }
 
+  /* Coarse pointers rarely show a stable gutter; it steals width from the chrome. */
+  @media (pointer: coarse) {
+    html {
+      scrollbar-gutter: auto;
+    }
+  }
+
   img,
   picture,
   video,
@@ -62,6 +69,16 @@
     --side-small: 26;
     --side-big: 36;
     --frame-radius: 1.15rem;
+
+    /* Visible viewport (URL bar aware) with classic vh fallback */
+    --vh-full: 100vh;
+    --vh-full: 100dvh;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    /* Explore bar + reset + tip clearance for scrollable modes */
+    --chrome-clearance: calc(10.75rem + var(--safe-bottom));
   }
 }
 

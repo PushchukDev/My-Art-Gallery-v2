@@ -28,15 +28,17 @@
     z-index: 20;
     display: grid;
     place-items: center;
+    /* Center within the band above Explore chrome, not the full screen */
+    padding: max(0.75rem, var(--safe-top)) 0.5rem var(--chrome-clearance);
     background:
       radial-gradient(ellipse 80% 60% at 50% 40%, color-mix(in srgb, var(--warm-edge) 12%, transparent), transparent 70%),
       var(--void);
   }
 
   .stage {
-    width: min(96vw, calc(96vh * 16 / 9));
+    width: min(100%, calc((var(--vh-full) - 10.5rem - var(--safe-bottom)) * 16 / 9));
     aspect-ratio: 16 / 9;
-    max-height: 86vh;
+    max-height: calc(var(--vh-full) - 10.5rem - var(--safe-bottom));
     border-radius: 0.65rem;
     overflow: hidden;
     box-shadow: 0 1.5rem 4rem color-mix(in srgb, #000 55%, transparent);
@@ -49,5 +51,12 @@
     height: 100%;
     border: 0;
     background: #000;
+  }
+
+  @media (min-width: 721px) {
+    .stage {
+      width: min(96vw, calc(86vh * 16 / 9), calc(86dvh * 16 / 9));
+      max-height: min(86vh, 86dvh);
+    }
   }
 </style>

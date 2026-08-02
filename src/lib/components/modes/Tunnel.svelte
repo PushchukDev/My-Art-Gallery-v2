@@ -290,8 +290,8 @@
 
 <style>
   .scroll-spacer {
-    /* last snap + viewport so credits are actually reachable */
-    height: calc(var(--last-snap) + 100vh);
+    /* last snap + visible viewport so credits are actually reachable */
+    height: calc(var(--last-snap) + var(--vh-full));
     pointer-events: none;
   }
 

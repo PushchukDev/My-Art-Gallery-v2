@@ -38,13 +38,13 @@
   .reset {
     position: fixed;
     z-index: 45;
-    /* Sit just above the Explore chrome bar (clear of its height) */
-    bottom: clamp(7.6rem, 13.5vh, 9rem);
+    /* Sit just above the Explore chrome bar (clear of its height + home indicator) */
+    bottom: calc(clamp(7.6rem, 13.5vh, 9rem) + var(--safe-bottom));
     left: 50%;
     top: auto;
     transform: translateX(-50%);
-    width: 2.65rem;
-    height: 2.65rem;
+    width: 2.75rem;
+    height: 2.75rem;
     display: grid;
     place-items: center;
     border-radius: 999px;
@@ -76,7 +76,7 @@
 
   @media (max-width: 620px) {
     .reset {
-      bottom: clamp(8.2rem, 16vh, 9.5rem);
+      bottom: calc(clamp(8.2rem, 16vh, 9.5rem) + var(--safe-bottom));
     }
   }
 

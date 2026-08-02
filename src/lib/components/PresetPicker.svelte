@@ -163,7 +163,7 @@
     position: fixed;
     z-index: 40;
     left: 50%;
-    bottom: clamp(0.85rem, 2.5vw, 1.4rem);
+    bottom: max(0.85rem, var(--safe-bottom));
     transform: translateX(-50%);
     display: flex;
     flex-direction: column;
@@ -178,6 +178,9 @@
     overflow: visible;
     opacity: 1;
     transition: opacity 0.35s var(--ease-out-expo);
+    box-sizing: border-box;
+    width: max-content;
+    max-width: calc(100vw - 1rem - var(--safe-left) - var(--safe-right));
   }
 
   .chrome.faded {
@@ -365,22 +368,35 @@
   }
 
   @media (max-width: 620px) {
+    .chrome {
+      padding: 0.4rem 0.35rem 0.45rem;
+      bottom: max(0.65rem, var(--safe-bottom));
+    }
+
+    .row {
+      gap: 0.18rem;
+    }
+
+    .divider {
+      margin: 0.2rem 0.12rem;
+    }
+
     .preset {
-      min-width: 3.35rem;
-      padding-inline: 0.32rem;
+      min-width: 3.1rem;
+      padding: 0.4rem 0.22rem 0.35rem;
     }
 
     .name {
-      font-size: 0.64rem;
+      font-size: 0.62rem;
     }
 
     .name.stacked {
-      max-width: 3.4rem;
+      max-width: 3.2rem;
     }
 
     .preset.process {
-      min-width: 3.35rem;
-      max-width: 3.6rem;
+      min-width: 3.1rem;
+      max-width: 3.4rem;
     }
   }
 </style>

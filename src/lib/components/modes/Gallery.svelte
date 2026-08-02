@@ -166,11 +166,11 @@
     z-index: 2;
     max-width: 72rem;
     margin: 0 auto;
-    padding: 0 var(--gutter) 8rem;
+    padding: 0 var(--gutter) var(--chrome-clearance);
   }
 
   .hero {
-    min-height: 100vh;
+    min-height: var(--vh-full);
     display: grid;
     place-items: center;
     padding-block: 4rem;
@@ -253,7 +253,7 @@
     display: grid;
     place-items: center;
     max-width: min(94vw, 100%);
-    max-height: min(82vh, 100%);
+    max-height: min(82vh, 82dvh, 100%);
     cursor: zoom-out;
   }
 
@@ -261,7 +261,7 @@
     width: auto;
     height: auto;
     max-width: min(94vw, 100%);
-    max-height: min(82vh, 100%);
+    max-height: min(82vh, 82dvh, 100%);
     border-radius: var(--frame-radius);
     box-shadow:
       0 0 0 1px color-mix(in srgb, var(--parchment) 10%, transparent),
