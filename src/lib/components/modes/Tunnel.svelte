@@ -30,7 +30,7 @@
 
   const snapScrolls = frames.map((_, index) => Math.max(0, scrollForIndex(index)));
 
-  // Spacer height must be lastSnap + 100vh so maxScroll can actually reach credits.
+  // Spacer height must be lastSnap + viewport so maxScroll can actually reach credits.
   const lastSnap = snapScrolls.at(-1) ?? 0;
 
   function zAt(index: number, top: number): number {
@@ -78,11 +78,22 @@
     let currentSnap = 0;
     /** Ignore scroll-end corrections while a programmatic snap is in flight / settling. */
     let suppressSnapUntil = 0;
-    /** Finger is down — never snap-correct during an active touch. */
-    let touchActive = false;
-    /** True after touch until momentum settles (avoids fighting inertial scroll). */
-    let touchGesture = false;
-    const supportsScrollEnd = 'onscrollend' in window;
+
+    /** Phones: discrete swipe steps (same feel as desktop wheel), not free-scroll + snap. */
+    const touchNav =
+      navigator.maxTouchPoints > 0 ||
+      window.matchMedia('(pointer: coarse)').matches;
+
+    let touchStartY = 0;
+    let touchStartX = 0;
+    let touchStartT = 0;
+    /** Ignore swipes that begin on Explore chrome / reset. */
+    let touchFromChrome = false;
+
+    const isChromeTarget = (target: EventTarget | null) => {
+      const el = target instanceof Element ? target : null;
+      return Boolean(el?.closest('[role="toolbar"], .reset'));
+    };
 
     const maxScroll = () =>
       Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
@@ -96,22 +107,6 @@
     const clearScrollEnd = () => {
       window.clearTimeout(scrollEndTimer);
       scrollEndTimer = 0;
-    };
-
-    const settleToNearest = () => {
-      if (locked || touchActive || performance.now() < suppressSnapUntil) return;
-      const nearest = nearestSnapIndex(document.documentElement.scrollTop);
-      currentSnap = nearest;
-      const target = snapScrolls[nearest]!;
-      if (Math.abs(document.documentElement.scrollTop - target) > 2) {
-        animateTo(target);
-      }
-      touchGesture = false;
-    };
-
-    const scheduleSettle = (delayMs: number) => {
-      clearScrollEnd();
-      scrollEndTimer = window.setTimeout(settleToNearest, delayMs);
     };
 
     const animateTo = (target: number) => {
@@ -159,11 +154,6 @@
     };
 
     const onWheel = (event: WheelEvent) => {
-      // Touch/trackpad gestures that synthesize wheel still scroll natively when
-      // we don't preventDefault — only hijack real discrete wheel / ctrl-free
-      // desktop scrolling. Touch paths use native scroll + settle.
-      if (touchGesture || touchActive) return;
-
       event.preventDefault();
       if (locked || performance.now() < wheelLock) return;
 
@@ -191,53 +181,73 @@
       goToSnap(currentSnap + dir);
     };
 
-    const onTouchStart = () => {
-      touchActive = true;
-      touchGesture = true;
-      clearScrollEnd();
+    const onTouchStart = (event: TouchEvent) => {
+      if (!touchNav || event.touches.length !== 1) return;
+      touchFromChrome = isChromeTarget(event.target);
+      if (touchFromChrome) return;
+      touchStartY = event.touches[0]!.clientY;
+      touchStartX = event.touches[0]!.clientX;
+      touchStartT = performance.now();
     };
 
-    const onTouchEnd = () => {
-      touchActive = false;
-      // Wait for inertial scroll to finish before snapping.
-      if (supportsScrollEnd) {
-        // scrollend will settle; keep a long fallback if scrollend never fires.
-        scheduleSettle(600);
-      } else {
-        scheduleSettle(280);
-      }
+    const onTouchMove = (event: TouchEvent) => {
+      if (!touchNav || touchFromChrome || isChromeTarget(event.target)) return;
+      // Block native page scroll — tunnel advances only via swipe-to-snap.
+      event.preventDefault();
+    };
+
+    const onTouchEnd = (event: TouchEvent) => {
+      if (!touchNav || touchFromChrome || locked || performance.now() < wheelLock) return;
+      const touch = event.changedTouches[0];
+      if (!touch) return;
+
+      const dy = touch.clientY - touchStartY;
+      const dx = touch.clientX - touchStartX;
+      const dt = performance.now() - touchStartT;
+
+      // Require a clear vertical flick (ignore taps / mostly-horizontal drags).
+      if (Math.abs(dy) < 48 || Math.abs(dy) < Math.abs(dx) * 1.15) return;
+      if (dt > 900) return;
+
+      goToSnap(currentSnap + (dy < 0 ? 1 : -1));
     };
 
     const onScroll = () => {
       syncScrollState();
-      if (locked || touchActive || performance.now() < suppressSnapUntil) {
+      // Touch path never free-scrolls; only sync during programmatic animateTo.
+      if (touchNav) return;
+
+      if (locked || performance.now() < suppressSnapUntil) {
         clearScrollEnd();
         return;
       }
 
-      // During/after touch, prefer scrollend (or a long idle) so we don't yank
-      // against momentum. Desktop wheel path uses goToSnap and rarely lands here.
-      if (touchGesture) {
-        if (!supportsScrollEnd) scheduleSettle(280);
-        return;
-      }
-
-      scheduleSettle(120);
-    };
-
-    const onScrollEnd = () => {
-      if (!touchGesture && !touchActive) return;
       clearScrollEnd();
-      settleToNearest();
+      scrollEndTimer = window.setTimeout(() => {
+        if (locked || performance.now() < suppressSnapUntil) return;
+        const nearest = nearestSnapIndex(document.documentElement.scrollTop);
+        currentSnap = nearest;
+        const target = snapScrolls[nearest]!;
+        if (Math.abs(document.documentElement.scrollTop - target) > 2) {
+          animateTo(target);
+        }
+      }, 120);
     };
+
+    if (touchNav) {
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+    }
 
     window.addEventListener('wheel', onWheel, { passive: false });
     window.addEventListener('keydown', onKeydown);
     window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('scrollend', onScrollEnd, { passive: true });
-    window.addEventListener('touchstart', onTouchStart, { passive: true });
-    window.addEventListener('touchend', onTouchEnd, { passive: true });
-    window.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    if (touchNav) {
+      window.addEventListener('touchstart', onTouchStart, { passive: true });
+      window.addEventListener('touchmove', onTouchMove, { passive: false });
+      window.addEventListener('touchend', onTouchEnd, { passive: true });
+      window.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    }
 
     currentSnap = 0;
     window.scrollTo(0, snapScrolls[0] ?? 0);
@@ -253,11 +263,15 @@
       resetHandler = null;
       cancelAnimationFrame(animRaf);
       clearScrollEnd();
+      if (touchNav) {
+        document.documentElement.style.overflow = '';
+        document.body.style.overflow = '';
+      }
       window.removeEventListener('wheel', onWheel);
       window.removeEventListener('keydown', onKeydown);
       window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('scrollend', onScrollEnd);
       window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
       window.removeEventListener('touchend', onTouchEnd);
       window.removeEventListener('touchcancel', onTouchEnd);
     };

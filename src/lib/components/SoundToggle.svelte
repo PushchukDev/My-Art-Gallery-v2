@@ -392,8 +392,7 @@
 
   @media (max-width: 720px) {
     .sound-wrap.embedded .tip {
-      /* Sit above the reset control that floats over the chrome */
-      bottom: calc(100% + 3.4rem);
+      bottom: calc(100% + 0.75rem);
       max-width: min(14rem, 70vw);
     }
   }

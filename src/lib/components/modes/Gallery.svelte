@@ -11,35 +11,10 @@
   let { onzoomchange }: Props = $props();
 
   let activeId = $state<string | null>(null);
-  let lockedScrollY = 0;
 
   const activePiece = $derived(
     activeId ? (pieces.find((piece) => piece.id === activeId) ?? null) : null,
   );
-
-  function lockPageScroll() {
-    lockedScrollY = window.scrollY || document.documentElement.scrollTop;
-    const body = document.body;
-    body.style.position = 'fixed';
-    body.style.top = `-${lockedScrollY}px`;
-    body.style.left = '0';
-    body.style.right = '0';
-    body.style.width = '100%';
-    body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-  }
-
-  function unlockPageScroll() {
-    const body = document.body;
-    body.style.position = '';
-    body.style.top = '';
-    body.style.left = '';
-    body.style.right = '';
-    body.style.width = '';
-    body.style.overflow = '';
-    document.documentElement.style.overflow = '';
-    window.scrollTo(0, lockedScrollY);
-  }
 
   $effect(() => {
     const open = activeId != null;
@@ -47,10 +22,33 @@
     return () => onzoomchange?.(false);
   });
 
+  /**
+   * Lock background scroll without `position: fixed` on body — that breaks
+   * nested `position: fixed` zoom overlays on iOS (empty / zero-size dialog).
+   */
   $effect(() => {
     if (activeId == null) return;
-    lockPageScroll();
-    return () => unlockPageScroll();
+
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+
+    const blockTouchScroll = (event: TouchEvent) => {
+      const target = event.target as Node | null;
+      if (target && document.querySelector('.zoom')?.contains(target)) return;
+      event.preventDefault();
+    };
+
+    document.addEventListener('touchmove', blockTouchScroll, { passive: false });
+
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+      document.removeEventListener('touchmove', blockTouchScroll);
+    };
   });
 
   function closeZoom() {
@@ -59,13 +57,8 @@
 
   /** Close zoom and ease back to the gallery hero. */
   export function resetToStart() {
-    // Read before closeZoom — body is position:fixed while zoomed, so scrollY is 0.
-    const start =
-      activeId != null
-        ? lockedScrollY
-        : window.scrollY || document.documentElement.scrollTop;
     closeZoom();
-
+    const start = window.scrollY || document.documentElement.scrollTop;
     if (start < 2) {
       window.scrollTo(0, 0);
       return;
@@ -83,11 +76,8 @@
       else window.scrollTo(0, 0);
     };
 
-    // Wait a frame so zoom unlock restores the locked scroll position first.
-    requestAnimationFrame(() => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(frame);
-    });
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(frame);
   }
 
   function onCellClick(id: string) {
@@ -230,11 +220,12 @@
     z-index: 30;
     display: grid;
     place-items: center;
+    width: 100%;
+    height: var(--vh-full);
     padding: clamp(1rem, 3vw, 2rem);
     pointer-events: auto;
     cursor: zoom-out;
     overscroll-behavior: none;
-    touch-action: none;
     animation: zoom-in 0.28s var(--ease-out-expo) both;
   }
 
@@ -252,16 +243,17 @@
     z-index: 1;
     display: grid;
     place-items: center;
-    max-width: min(94vw, 100%);
-    max-height: min(82vh, 82dvh, 100%);
+    width: min(94vw, 100%);
+    max-height: min(82vh, 82dvh);
     cursor: zoom-out;
   }
 
   .zoom-frame :global(.zoom-image) {
     width: auto;
     height: auto;
-    max-width: min(94vw, 100%);
-    max-height: min(82vh, 82dvh, 100%);
+    max-width: 100%;
+    max-height: min(82vh, 82dvh);
+    object-fit: contain;
     border-radius: var(--frame-radius);
     box-shadow:
       0 0 0 1px color-mix(in srgb, var(--parchment) 10%, transparent),

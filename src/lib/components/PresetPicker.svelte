@@ -338,8 +338,7 @@
       right: auto;
       left: 50%;
       top: auto;
-      /* Clear the floating reset control above the chrome bar */
-      bottom: calc(100% + 3.4rem);
+      bottom: calc(100% + 0.75rem);
       transform: translateX(-50%);
       max-width: min(16.5rem, 78vw);
       animation-name: tip-in-up;

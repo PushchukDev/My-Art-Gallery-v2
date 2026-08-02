@@ -7,13 +7,14 @@
   /** Ignore further wheel input briefly after a step (trackpads spam events). */
   const WHEEL_LOCK_MS = 380;
 
+  /** Neighbors on each side of the focused card. */
+  const REACH = 2;
+  /** Degrees between adjacent cards on the front arc. */
+  const ARC = 56;
+
   let focus = $state(0);
   let spin = $state(0);
   let radius = $state(420);
-  /** Neighbors on each side of the focused card (1 on narrow phones). */
-  let reach = $state(2);
-  /** Degrees between adjacent cards on the front arc. */
-  let arc = $state(56);
   let dragging = $state(false);
   let showIntro = $state(true);
   let stageEl = $state<HTMLElement | null>(null);
@@ -22,8 +23,6 @@
   let spinValue = 0;
   let focusValue = 0;
   let introValue = true;
-  let arcValue = 56;
-  let reachValue = 2;
   let wheelLocked = false;
   let dragAccumX = 0;
   let dragAccumY = 0;
@@ -53,9 +52,9 @@
   }
 
   function applySpin(next: number) {
-    const max = maxIndex * arcValue;
+    const max = maxIndex * ARC;
     spinValue = Math.max(0, Math.min(max, next));
-    focusValue = clampIndex(Math.round(spinValue / arcValue));
+    focusValue = clampIndex(Math.round(spinValue / ARC));
     spin = spinValue;
     focus = focusValue;
   }
@@ -104,7 +103,7 @@
     const next = clampIndex(index);
     dismissIntro();
     window.clearTimeout(snapTimer);
-    animateTo(next * arcValue);
+    animateTo(next * ARC);
     publishProgress();
   }
 
@@ -115,7 +114,7 @@
   function scheduleSnap() {
     window.clearTimeout(snapTimer);
     snapTimer = window.setTimeout(() => {
-      animateTo(clampIndex(Math.round(spinValue / arcValue)) * arcValue);
+      animateTo(clampIndex(Math.round(spinValue / ARC)) * ARC);
     }, 80);
   }
 
@@ -149,31 +148,13 @@
   function measure() {
     const w = window.innerWidth;
     const h = window.innerHeight;
-    const narrow = w <= 720;
-
-    // Narrow phones: tighter arc + one neighbor so cards aren't clipped hard.
-    const nextArc = narrow ? 40 : 56;
-    const nextReach = narrow ? 1 : 2;
-    if (nextArc !== arcValue || nextReach !== reachValue) {
-      const focused = focusValue;
-      arcValue = nextArc;
-      reachValue = nextReach;
-      arc = nextArc;
-      reach = nextReach;
-      applySpin(focused * arcValue);
-    }
-
-    if (narrow) {
-      radius = Math.min(Math.max(w * 0.4, h * 0.34, 190), Math.min(w * 0.52, 300));
-    } else {
-      // Wider orbit = more horizontal spread for the same ARC
-      radius = Math.min(Math.max(w * 0.48, h * 0.45, 400), Math.min(w * 0.7, 760));
-    }
+    // Wider orbit = more horizontal spread for the same ARC
+    radius = Math.min(Math.max(w * 0.48, h * 0.45, 400), Math.min(w * 0.7, 760));
   }
 
   function visibleIndices(): number[] {
     const out: number[] = [];
-    for (let o = -reach; o <= reach; o++) {
+    for (let o = -REACH; o <= REACH; o++) {
       const i = focus + o;
       if (i >= 0 && i <= maxIndex) out.push(i);
     }
@@ -186,8 +167,8 @@
     filter: string;
     zIndex: number;
   } {
-    const offset = index - spin / arc;
-    const angle = offset * arc;
+    const offset = index - spin / ARC;
+    const angle = offset * ARC;
     const abs = Math.abs(offset);
     const opacity = Math.max(0, 1 - abs * 0.22);
     const brightness = Math.max(0.4, 1.05 - abs * 0.28);
@@ -198,7 +179,7 @@
       transform: `translate(-50%, -50%) rotateY(${angle}deg) translateZ(${radius}px) scale(${scale})`,
       opacity,
       filter: `brightness(${brightness})`,
-      zIndex: Math.round((reach + 1 - abs) * 10),
+      zIndex: Math.round((REACH + 1 - abs) * 10),
     };
   }
 
@@ -320,37 +301,40 @@
   <div class="stage" class:dragging bind:this={stageEl}>
     <div class="ring-glow" aria-hidden="true"></div>
 
-    <div class="wheel" style:transform={`translateZ(${-radius}px)`}>
-      {#each visibleIndices() as index (isCredit(index) ? 'credit' : pieces[index].id)}
-        {@const s = slotStyle(index)}
-        <article
-          class="panel"
-          class:credit-panel={isCredit(index)}
-          style:transform={s.transform}
-          style:z-index={s.zIndex}
-        >
-          {#if isCredit(index)}
-            <p
-              class="credit-slide"
-              style:opacity={s.opacity}
-              style:filter={s.filter}
-            >
-              {credit}
-            </p>
-          {:else}
-            <div class="panel-art" style:opacity={s.opacity} style:filter={s.filter}>
-              <ArtImage
-                src={pieces[index].src}
-                alt={pieces[index].alt}
-                loading={Math.abs(index - focus) <= 1 ? 'eager' : 'lazy'}
-                decoding="async"
-                draggable={false}
-              />
-            </div>
-          {/if}
-        </article>
-      {/each}
-    </div>
+    <!-- Hide 3D panels during intro — on phones they read as a junk vertical strip through the title. -->
+    {#if !showIntro}
+      <div class="wheel" style:transform={`translateZ(${-radius}px)`}>
+        {#each visibleIndices() as index (isCredit(index) ? 'credit' : pieces[index].id)}
+          {@const s = slotStyle(index)}
+          <article
+            class="panel"
+            class:credit-panel={isCredit(index)}
+            style:transform={s.transform}
+            style:z-index={s.zIndex}
+          >
+            {#if isCredit(index)}
+              <p
+                class="credit-slide"
+                style:opacity={s.opacity}
+                style:filter={s.filter}
+              >
+                {credit}
+              </p>
+            {:else}
+              <div class="panel-art" style:opacity={s.opacity} style:filter={s.filter}>
+                <ArtImage
+                  src={pieces[index].src}
+                  alt={pieces[index].alt}
+                  loading={Math.abs(index - focus) <= 1 ? 'eager' : 'lazy'}
+                  decoding="async"
+                  draggable={false}
+                />
+              </div>
+            {/if}
+          </article>
+        {/each}
+      </div>
+    {/if}
 
     {#if showIntro}
       <div class="intro">
@@ -515,18 +499,18 @@
 
   @media (max-width: 720px) {
     .stage {
-      perspective: min(1100px, 120vh, 120dvh);
-      perspective-origin: 50% 40%;
+      perspective: min(1200px, 130vh, 130dvh);
+      perspective-origin: 50% 42%;
     }
 
     .panel {
-      top: 42%;
+      top: 44%;
     }
 
     .panel :global(img),
     .panel-art :global(img) {
-      max-width: min(88vw, 24rem);
-      max-height: min(68vh, 68dvh, calc(var(--vh-full) - 11.5rem - var(--safe-bottom)));
+      max-width: min(82vw, 22rem);
+      max-height: min(64vh, 64dvh, calc(var(--vh-full) - 11.5rem - var(--safe-bottom)));
     }
   }
 
