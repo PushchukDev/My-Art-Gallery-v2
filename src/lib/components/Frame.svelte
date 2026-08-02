@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Frame as FrameData } from '$lib/data/gallery';
-  import ScrollCue from './ScrollCue.svelte';
+  import BrandIntro from './BrandIntro.svelte';
   import ArtImage from './ArtImage.svelte';
 
   type Props = {
@@ -40,17 +40,7 @@
 >
   <div class="frame__content">
     {#if frame.type === 'title'}
-      <div class="title-block">
-        <h1 class="brand">{frame.brand}</h1>
-        <p class="tagline">
-          {frame.line}
-          <span class="tagline-sub">{frame.subline}</span>
-          <span class="tagline-ps">{frame.ps}</span>
-        </p>
-        {#if !reducedMotion}
-          <ScrollCue />
-        {/if}
-      </div>
+      <BrandIntro showScrollCue={!reducedMotion} />
     {:else if frame.type === 'image'}
       <div
         class="image-layer"
@@ -92,9 +82,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition:
-      transform var(--transition),
-      opacity 0.75s ease;
+    /* Do NOT transition transform — Tunnel drives translateZ every animation
+       frame. A 0.75s CSS lerp fights that and makes the previous piece
+       explode toward the camera after each step. */
+    transition: opacity 0.2s linear;
     will-change: transform, opacity;
     transform-style: preserve-3d;
   }
@@ -132,46 +123,6 @@
   .flat .frame__content {
     height: auto;
     min-height: inherit;
-  }
-
-  .title-block {
-    max-width: min(100%, 92vw);
-    min-width: 0;
-    text-align: center;
-    animation: rise-in 1.1s var(--ease-out-expo) both;
-  }
-
-  .brand {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: clamp(2.4rem, calc(var(--index) * 5.4), 8.5rem);
-    letter-spacing: -0.04em;
-    line-height: 0.95;
-    color: var(--brand);
-    max-width: min(18ch, 92vw);
-    margin-inline: auto;
-  }
-
-  .tagline {
-    margin-top: 1.1rem;
-    max-width: min(36rem, 88vw);
-    margin-inline: auto;
-    font-size: clamp(0.95rem, calc(var(--index) * 0.95), 1.2rem);
-    line-height: 1.45;
-    color: var(--tagline);
-    letter-spacing: 0.02em;
-  }
-
-  .tagline-sub {
-    display: block;
-    margin-top: 0.35rem;
-  }
-
-  .tagline-ps {
-    display: block;
-    margin-top: 0.45rem;
-    font-size: 0.92em;
-    color: var(--parchment-faint);
   }
 
   .image-layer {
@@ -263,17 +214,6 @@
     color: var(--parchment-faint);
   }
 
-  @keyframes rise-in {
-    from {
-      opacity: 0;
-      transform: translateY(1.25rem);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
   @media (max-width: 720px) {
     .image-layer,
     .image-layer.image-left.has-caption,
@@ -302,10 +242,6 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .title-block {
-      animation: none;
-    }
-
     .frame-media {
       filter: none !important;
       transition: none;

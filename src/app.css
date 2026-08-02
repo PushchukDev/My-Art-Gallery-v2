@@ -79,6 +79,11 @@
     --safe-left: env(safe-area-inset-left, 0px);
     /* Explore bar + reset + tip clearance for scrollable modes */
     --chrome-clearance: calc(10.75rem + var(--safe-bottom));
+
+    /* Shared hero type — all explore modes use BrandIntro + these tokens */
+    --brand-size: clamp(2.25rem, 8.5vw, 5.75rem);
+    --brand-size-compact: clamp(2rem, 7vw, 4.25rem);
+    --tagline-size: clamp(0.95rem, 2.8vw, 1.2rem);
   }
 }
 

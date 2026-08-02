@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import { pieces, credit, brand } from '$lib/data/pieces';
-  import ScrollCue from '../ScrollCue.svelte';
+  import { pieces, credit } from '$lib/data/pieces';
+  import BrandIntro from '../BrandIntro.svelte';
   import ArtImage from '../ArtImage.svelte';
 
   /** Ignore further wheel input briefly after a step (trackpads spam events). */
@@ -338,13 +338,7 @@
 
     {#if showIntro}
       <div class="intro">
-        <h1 class="brand">{brand.name}</h1>
-        <p class="tagline">
-          {brand.line}
-          <span class="tagline-sub">{brand.subline}</span>
-          <span class="tagline-ps">{brand.ps}</span>
-        </p>
-        <ScrollCue label={cueLabel} />
+        <BrandIntro cueLabel={cueLabel} />
       </div>
     {/if}
   </div>
@@ -442,37 +436,6 @@
     backdrop-filter: blur(4px);
     pointer-events: none;
     animation: intro-in 0.7s var(--ease-out-expo) both;
-  }
-
-  .brand {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: clamp(2.1rem, calc(var(--index) * 4.2), 5rem);
-    letter-spacing: -0.03em;
-    line-height: 0.98;
-    color: var(--brand);
-    max-width: min(18ch, 92vw);
-  }
-
-  .tagline {
-    margin-top: 1rem;
-    max-width: min(36rem, 88vw);
-    margin-inline: auto;
-    font-size: clamp(0.95rem, calc(var(--index) * 0.95), 1.2rem);
-    line-height: 1.45;
-    color: var(--tagline);
-  }
-
-  .tagline-sub {
-    display: block;
-    margin-top: 0.35rem;
-  }
-
-  .tagline-ps {
-    display: block;
-    margin-top: 0.45rem;
-    font-size: 0.92em;
-    color: var(--parchment-faint);
   }
 
   .credit-slide {

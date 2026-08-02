@@ -38,15 +38,17 @@
   }
 
   function opacityAt(z: number): number {
-    if (z >= near / 1.8) return 0;
+    // Kill frames once they pass the lens — past this they scale insanely large.
+    if (z >= near / 2.4) return 0;
     if (z <= -near * 2.6) return 0;
 
     if (z < -near * 1.2) {
       return Math.max(0, 1 - (-z - near * 1.2) / (near * 1.4));
     }
 
-    if (z > near / 3.2) {
-      return Math.max(0, 1 - (z - near / 3.2) / (near / 1.8 - near / 3.2));
+    // Start fading as soon as a piece crosses the focus plane toward the camera.
+    if (z > 8) {
+      return Math.max(0, 1 - (z - 8) / (near / 2.4 - 8));
     }
 
     return 1;
@@ -98,15 +100,21 @@
     const maxScroll = () =>
       Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
 
-    const syncScrollState = () => {
-      scrollTop = document.documentElement.scrollTop;
-    };
-
     let scrollEndTimer = 0;
 
     const clearScrollEnd = () => {
       window.clearTimeout(scrollEndTimer);
       scrollEndTimer = 0;
+    };
+
+    /** Authoritative camera depth — avoid trusting DOM scrollTop mid-gesture
+     *  (overflow:hidden + mobile browsers can report stale values). */
+    let cameraY = document.documentElement.scrollTop;
+
+    const setCamera = (y: number) => {
+      cameraY = y;
+      window.scrollTo(0, y);
+      scrollTop = y;
     };
 
     const animateTo = (target: number) => {
@@ -115,30 +123,28 @@
       clearScrollEnd();
       cancelAnimationFrame(animRaf);
 
-      const start = document.documentElement.scrollTop;
+      const start = cameraY;
       const dist = clamped - start;
       if (Math.abs(dist) < 0.5) {
-        window.scrollTo(0, clamped);
-        syncScrollState();
+        setCamera(clamped);
         locked = false;
         suppressSnapUntil = performance.now() + 220;
         return;
       }
 
-      const duration = Math.min(850, 380 + Math.abs(dist) * 0.55);
+      // Keep step moves snappy so frames don't linger near the lens (huge scale).
+      const duration = Math.min(620, 280 + Math.abs(dist) * 0.4);
       const t0 = performance.now();
 
       const step = (now: number) => {
         const t = Math.min(1, (now - t0) / duration);
         const e = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
-        window.scrollTo(0, start + dist * e);
-        syncScrollState();
+        setCamera(start + dist * e);
 
         if (t < 1) {
           animRaf = requestAnimationFrame(step);
         } else {
-          window.scrollTo(0, clamped);
-          syncScrollState();
+          setCamera(clamped);
           locked = false;
           wheelLock = performance.now() + 280;
           suppressSnapUntil = performance.now() + 280;
@@ -213,11 +219,14 @@
     };
 
     const onScroll = () => {
-      syncScrollState();
-      // Touch path never free-scrolls; only sync during programmatic animateTo.
-      if (touchNav) return;
+      // Touch path is fully driven by cameraY; ignore native scroll noise.
+      if (touchNav || locked) return;
 
-      if (locked || performance.now() < suppressSnapUntil) {
+      const top = document.documentElement.scrollTop;
+      cameraY = top;
+      scrollTop = top;
+
+      if (performance.now() < suppressSnapUntil) {
         clearScrollEnd();
         return;
       }
@@ -225,10 +234,10 @@
       clearScrollEnd();
       scrollEndTimer = window.setTimeout(() => {
         if (locked || performance.now() < suppressSnapUntil) return;
-        const nearest = nearestSnapIndex(document.documentElement.scrollTop);
+        const nearest = nearestSnapIndex(cameraY);
         currentSnap = nearest;
         const target = snapScrolls[nearest]!;
-        if (Math.abs(document.documentElement.scrollTop - target) > 2) {
+        if (Math.abs(cameraY - target) > 2) {
           animateTo(target);
         }
       }, 120);
@@ -250,8 +259,7 @@
     }
 
     currentSnap = 0;
-    window.scrollTo(0, snapScrolls[0] ?? 0);
-    syncScrollState();
+    setCamera(snapScrolls[0] ?? 0);
     suppressSnapUntil = performance.now() + 220;
 
     resetHandler = () => {

@@ -25,6 +25,11 @@
 
 <style>
   .title-block {
+    width: 100%;
+    max-width: min(36rem, 92vw);
+    min-width: 0;
+    margin-inline: auto;
+    padding-inline: 0.25rem;
     text-align: center;
     animation: rise-in 1.1s var(--ease-out-expo) both;
   }
@@ -36,23 +41,26 @@
   .brand {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: clamp(2.4rem, calc(var(--index) * 4.6), 5.75rem);
+    /* Width-driven so tall phones don't oversize past the viewport */
+    font-size: var(--brand-size);
     letter-spacing: -0.03em;
     line-height: 0.98;
     color: var(--brand);
-    max-width: min(18ch, 92vw);
+    max-width: 100%;
     margin-inline: auto;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
   }
 
   .compact .brand {
-    font-size: clamp(2rem, calc(var(--index) * 3.8), 4.25rem);
+    font-size: var(--brand-size-compact);
   }
 
   .tagline {
     margin-top: 1.1rem;
     max-width: min(36rem, 88vw);
     margin-inline: auto;
-    font-size: clamp(0.95rem, calc(var(--index) * 0.95), 1.2rem);
+    font-size: var(--tagline-size);
     line-height: 1.45;
     color: var(--tagline);
     letter-spacing: 0.02em;
